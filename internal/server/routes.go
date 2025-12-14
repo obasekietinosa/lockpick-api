@@ -19,7 +19,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	// Swagger Handler
 	mux.HandleFunc("/swagger/", httpSwagger.WrapHandler)
 
-	return mux
+	return CORSMiddleware(mux)
 }
 
 func (s *Server) socketHandler(w http.ResponseWriter, r *http.Request) {
