@@ -1,0 +1,105 @@
+basePath: /
+definitions:
+  server.CreateGameRequest:
+    properties:
+      config:
+        $ref: '#/definitions/store.GameConfig'
+      player_name:
+        type: string
+    type: object
+  server.JoinGameRequest:
+    properties:
+      player_name:
+        type: string
+      room_id:
+        type: string
+    type: object
+  store.GameConfig:
+    properties:
+      hints_enabled:
+        type: boolean
+      is_private:
+        type: boolean
+      pin_length:
+        type: integer
+      player_name:
+        type: string
+      timer_duration:
+        description: 0 means no timer
+        type: integer
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+  description: API for Lockpick game.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Lockpick API
+  version: "1.0"
+paths:
+  /games:
+    post:
+      consumes:
+      - application/json
+      description: Create a new game room, optionally private or public for matchmaking
+      parameters:
+      - description: Game configuration
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/server.CreateGameRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Create a new game
+      tags:
+      - games
+  /games/join:
+    post:
+      consumes:
+      - application/json
+      description: Join a game by room ID
+      parameters:
+      - description: Join parameters
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/server.JoinGameRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Join an existing game
+      tags:
+      - games
+  /health:
+    get:
+      description: Check if the server is healthy
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Health Check
+      tags:
+      - health
+swagger: "2.0"

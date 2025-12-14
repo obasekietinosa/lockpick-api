@@ -19,6 +19,14 @@ type JoinGameRequest struct {
 	RoomID     string `json:"room_id"`
 }
 
+// @Summary Create a new game
+// @Description Create a new game room, optionally private or public for matchmaking
+// @Tags games
+// @Accept json
+// @Produce json
+// @Param request body CreateGameRequest true "Game configuration"
+// @Success 200 {object} map[string]interface{}
+// @Router /games [post]
 func (s *Server) HandleCreateGame(w http.ResponseWriter, r *http.Request) {
 	var req CreateGameRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -132,6 +140,14 @@ func (s *Server) HandleCreateGame(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// @Summary Join an existing game
+// @Description Join a game by room ID
+// @Tags games
+// @Accept json
+// @Produce json
+// @Param request body JoinGameRequest true "Join parameters"
+// @Success 200 {object} map[string]interface{}
+// @Router /games/join [post]
 func (s *Server) HandleJoinGame(w http.ResponseWriter, r *http.Request) {
 	var req JoinGameRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
