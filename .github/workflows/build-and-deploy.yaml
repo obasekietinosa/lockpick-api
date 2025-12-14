@@ -24,4 +24,4 @@ jobs:
           private-ssh-key: ${{ secrets.SSH_KEY }}
           source-path: ./cmd/api/build/
           destination-path: ./
-          rsync-options: --chmod=+X -a
+          rsync-options: --chmod=+X -a --no-times
