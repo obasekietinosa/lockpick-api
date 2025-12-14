@@ -38,4 +38,7 @@ type Store interface {
 	GetPlayer(ctx context.Context, playerID string) (*Player, error)
 	AddPlayerToRoom(ctx context.Context, roomID, playerID string) error
 	GetRoomPlayers(ctx context.Context, roomID string) ([]string, error)
+	FindMatchingRoom(ctx context.Context, config *GameConfig) (*Room, error)
+	AddWaitingRoom(ctx context.Context, room *Room) error
+	RemoveWaitingRoom(ctx context.Context, roomID string) error
 }

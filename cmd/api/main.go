@@ -12,6 +12,7 @@ import (
 	"github.com/obasekietinosa/lockpick-api/internal/config"
 	"github.com/obasekietinosa/lockpick-api/internal/server"
 	"github.com/obasekietinosa/lockpick-api/internal/socket"
+	"github.com/obasekietinosa/lockpick-api/internal/store"
 )
 
 func main() {
@@ -22,8 +23,14 @@ func main() {
 	hub := socket.NewHub(cfg)
 	go hub.Run()
 
+	// Initialize Redis Store
+	redisStore, err := store.NewRedisStore(cfg.RedisAddr, cfg.RedisPassword)
+	if err != nil {
+		log.Fatalf("Failed to connect to Redis: %s", err)
+	}
+
 	// Initialize HTTP Server
-	srv := server.NewServer(cfg, hub)
+	srv := server.NewServer(cfg, hub, redisStore)
 
 	// Start Server
 	go func() {

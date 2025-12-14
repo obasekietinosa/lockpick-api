@@ -12,6 +12,8 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	mux.HandleFunc("/health", s.healthHandler)
 	mux.HandleFunc("/ws", s.socketHandler)
+	mux.HandleFunc("POST /games", s.HandleCreateGame)
+	mux.HandleFunc("POST /games/join", s.HandleJoinGame)
 
 	return mux
 }

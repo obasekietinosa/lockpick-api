@@ -91,3 +91,43 @@ func (s *RedisStore) GetRoomPlayers(ctx context.Context, roomID string) ([]strin
 	key := fmt.Sprintf("room:%s:players", roomID)
 	return s.client.SMembers(ctx, key).Result()
 }
+
+func (s *RedisStore) FindMatchingRoom(ctx context.Context, config *GameConfig) (*Room, error) {
+	key := fmt.Sprintf("waiting:%d:%v:%d", config.PinLength, config.HintsEnabled, config.TimerDuration)
+	roomID, err := s.client.SPop(ctx, key).Result()
+	if err != nil {
+		if err == redis.Nil {
+			return nil, nil // No matching room found
+		}
+		return nil, fmt.Errorf("failed to find matching room: %w", err)
+	}
+
+	return s.GetRoom(ctx, roomID)
+}
+
+func (s *RedisStore) AddWaitingRoom(ctx context.Context, room *Room) error {
+	if room.Config == nil {
+		return fmt.Errorf("room config is nil")
+	}
+	key := fmt.Sprintf("waiting:%d:%v:%d", room.Config.PinLength, room.Config.HintsEnabled, room.Config.TimerDuration)
+	return s.client.SAdd(ctx, key, room.ID).Err()
+}
+
+func (s *RedisStore) RemoveWaitingRoom(ctx context.Context, roomID string) error {
+	// This is a bit inefficient as we don't know the config just from ID.
+	// But in the "Join" flow we usually have the room object or at least we can fetch it.
+	// For now, let's assume we might need to fetch the room first if we want to remove it from waiting list.
+	// However, the interface asks for roomID.
+
+	// Optimization: If we fetch the room, we can construct the key.
+	room, err := s.GetRoom(ctx, roomID)
+	if err != nil {
+		return err
+	}
+	if room.Config == nil {
+		return nil // Should be an error?
+	}
+
+	key := fmt.Sprintf("waiting:%d:%v:%d", room.Config.PinLength, room.Config.HintsEnabled, room.Config.TimerDuration)
+	return s.client.SRem(ctx, key, roomID).Err()
+}
