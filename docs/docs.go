@@ -51,8 +51,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/server.CreateGameResponse"
                         }
                     }
                 }
@@ -86,8 +85,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/server.JoinGameResponse"
                         }
                     }
                 }
@@ -129,6 +127,23 @@ const docTemplate = `{
                 }
             }
         },
+        "server.CreateGameResponse": {
+            "type": "object",
+            "properties": {
+                "config": {
+                    "$ref": "#/definitions/store.GameConfig"
+                },
+                "player_id": {
+                    "type": "string"
+                },
+                "room_id": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
         "server.JoinGameRequest": {
             "type": "object",
             "properties": {
@@ -136,6 +151,23 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "room_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "server.JoinGameResponse": {
+            "type": "object",
+            "properties": {
+                "config": {
+                    "$ref": "#/definitions/store.GameConfig"
+                },
+                "player_id": {
+                    "type": "string"
+                },
+                "room_id": {
+                    "type": "string"
+                },
+                "status": {
                     "type": "string"
                 }
             }

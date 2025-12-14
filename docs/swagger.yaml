@@ -7,11 +7,33 @@ definitions:
       player_name:
         type: string
     type: object
+  server.CreateGameResponse:
+    properties:
+      config:
+        $ref: '#/definitions/store.GameConfig'
+      player_id:
+        type: string
+      room_id:
+        type: string
+      status:
+        type: string
+    type: object
   server.JoinGameRequest:
     properties:
       player_name:
         type: string
       room_id:
+        type: string
+    type: object
+  server.JoinGameResponse:
+    properties:
+      config:
+        $ref: '#/definitions/store.GameConfig'
+      player_id:
+        type: string
+      room_id:
+        type: string
+      status:
         type: string
     type: object
   store.GameConfig:
@@ -59,8 +81,7 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/server.CreateGameResponse'
       summary: Create a new game
       tags:
       - games
@@ -82,8 +103,7 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/server.JoinGameResponse'
       summary: Join an existing game
       tags:
       - games

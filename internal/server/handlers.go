@@ -19,13 +19,27 @@ type JoinGameRequest struct {
 	RoomID     string `json:"room_id"`
 }
 
+type CreateGameResponse struct {
+	RoomID   string            `json:"room_id"`
+	PlayerID string            `json:"player_id"`
+	Status   string            `json:"status"`
+	Config   *store.GameConfig `json:"config,omitempty"`
+}
+
+type JoinGameResponse struct {
+	RoomID   string            `json:"room_id"`
+	PlayerID string            `json:"player_id"`
+	Status   string            `json:"status"`
+	Config   *store.GameConfig `json:"config"`
+}
+
 // @Summary Create a new game
 // @Description Create a new game room, optionally private or public for matchmaking
 // @Tags games
 // @Accept json
 // @Produce json
 // @Param request body CreateGameRequest true "Game configuration"
-// @Success 200 {object} map[string]interface{}
+// @Success 200 {object} CreateGameResponse
 // @Router /games [post]
 func (s *Server) HandleCreateGame(w http.ResponseWriter, r *http.Request) {
 	var req CreateGameRequest
@@ -81,11 +95,11 @@ func (s *Server) HandleCreateGame(w http.ResponseWriter, r *http.Request) {
 			}
 
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(map[string]interface{}{
-				"room_id":   room.ID,
-				"player_id": playerID,
-				"status":    "matched",
-				"config":    room.Config,
+			json.NewEncoder(w).Encode(CreateGameResponse{
+				RoomID:   room.ID,
+				PlayerID: playerID,
+				Status:   "matched",
+				Config:   room.Config,
 			})
 			return
 		}
@@ -133,10 +147,10 @@ func (s *Server) HandleCreateGame(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"room_id":   room.ID,
-		"player_id": playerID,
-		"status":    "waiting",
+	json.NewEncoder(w).Encode(CreateGameResponse{
+		RoomID:   room.ID,
+		PlayerID: playerID,
+		Status:   "waiting",
 	})
 }
 
@@ -146,7 +160,7 @@ func (s *Server) HandleCreateGame(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param request body JoinGameRequest true "Join parameters"
-// @Success 200 {object} map[string]interface{}
+// @Success 200 {object} JoinGameResponse
 // @Router /games/join [post]
 func (s *Server) HandleJoinGame(w http.ResponseWriter, r *http.Request) {
 	var req JoinGameRequest
@@ -197,10 +211,10 @@ func (s *Server) HandleJoinGame(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"room_id":   room.ID,
-		"player_id": playerID,
-		"status":    "joined",
-		"config":    room.Config,
+	json.NewEncoder(w).Encode(JoinGameResponse{
+		RoomID:   room.ID,
+		PlayerID: playerID,
+		Status:   "joined",
+		Config:   room.Config,
 	})
 }
