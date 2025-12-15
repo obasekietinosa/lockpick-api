@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/obasekietinosa/lockpick-api/internal/socket"
 	"github.com/obasekietinosa/lockpick-api/internal/store"
 )
 
@@ -299,10 +300,43 @@ func (s *Server) HandleSelectPin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check if all players have selected pins?
-	// This would require checking the other player.
-	// For now, just return success.
-	// The frontend can poll room status or we can push via websocket (later).
+	// Check if all players have selected pins
+	roomPlayers, err := s.store.GetRoomPlayers(r.Context(), roomID)
+	if err != nil {
+		// Log error but don't fail the request? Or maybe fail?
+		// Stick to success for now, but logged.
+		fmt.Printf("Error getting room players: %v\n", err)
+	} else {
+		if len(roomPlayers) == 2 {
+			allReady := true
+			for _, pid := range roomPlayers {
+				p, err := s.store.GetPlayer(r.Context(), pid)
+				if err != nil || len(p.Pins) != 3 {
+					allReady = false
+					break
+				}
+			}
+
+			if allReady {
+				// Update room status
+				room.Status = "playing"
+				if err := s.store.SaveRoom(r.Context(), room); err != nil {
+					fmt.Printf("Error saving room status: %v\n", err)
+				}
+
+				// Broadcast Game Start
+				msg := socket.GameMessage{
+					Type: "game_start",
+					Payload: map[string]interface{}{
+						"room_id": room.ID,
+						"status":  "playing",
+					},
+				}
+				msgBytes, _ := json.Marshal(msg)
+				s.hub.Broadcast <- msgBytes
+			}
+		}
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(SelectPinResponse{
