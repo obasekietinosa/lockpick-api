@@ -73,7 +73,7 @@ func (m *MockStore) RemoveWaitingRoom(ctx context.Context, roomID string) error 
 
 func TestHandleCreateGame(t *testing.T) {
 	mockStore := NewMockStore()
-	hub := socket.NewHub(&config.Config{})
+	hub := socket.NewHub(&config.Config{}, mockStore)
 	srv := NewServer(&config.Config{}, hub, mockStore)
 
 	// Test Case 1: Private Game
@@ -101,7 +101,7 @@ func TestHandleCreateGame(t *testing.T) {
 
 func TestHandleSelectPin(t *testing.T) {
 	mockStore := NewMockStore()
-	hub := socket.NewHub(&config.Config{})
+	hub := socket.NewHub(&config.Config{}, mockStore)
 	srv := NewServer(&config.Config{}, hub, mockStore)
 
 	// Setup: Create Room and Player

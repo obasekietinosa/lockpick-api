@@ -27,15 +27,15 @@ func main() {
 	// Load config
 	cfg := config.Load()
 
-	// Initialize WebSocket Hub
-	hub := socket.NewHub(cfg)
-	go hub.Run()
-
 	// Initialize Redis Store
 	redisStore, err := store.NewRedisStore(cfg.RedisAddr, cfg.RedisPassword)
 	if err != nil {
 		log.Fatalf("Failed to connect to Redis: %s", err)
 	}
+
+	// Initialize WebSocket Hub
+	hub := socket.NewHub(cfg, redisStore)
+	go hub.Run()
 
 	// Initialize HTTP Server
 	srv := server.NewServer(cfg, hub, redisStore)

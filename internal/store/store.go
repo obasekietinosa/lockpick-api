@@ -24,11 +24,13 @@ type Player struct {
 
 // Room represents a game room
 type Room struct {
-	ID        string      `json:"id"`
-	HostID    string      `json:"host_id"`
-	Status    string      `json:"status"` // e.g., "waiting", "playing", "finished"
-	Config    *GameConfig `json:"config"`
-	CreatedAt time.Time   `json:"created_at"`
+	ID           string         `json:"id"`
+	HostID       string         `json:"host_id"`
+	Status       string         `json:"status"` // e.g., "waiting", "playing", "finished"
+	Config       *GameConfig    `json:"config"`
+	CurrentRound int            `json:"current_round"` // 1-indexed (1, 2, 3)
+	Scores       map[string]int `json:"scores"`        // PlayerID -> Score (Rounds won)
+	CreatedAt    time.Time      `json:"created_at"`
 }
 
 // Store defines the interface for data persistence

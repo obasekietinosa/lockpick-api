@@ -56,15 +56,37 @@ func (c *Client) readPump() {
 	c.Conn.SetReadDeadline(time.Now().Add(pongWait))
 	c.Conn.SetPongHandler(func(string) error { c.Conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
 	for {
-		_, message, err := c.Conn.ReadMessage()
+		var msg GameMessage
+		err := c.Conn.ReadJSON(&msg)
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				log.Printf("error: %v", err)
 			}
 			break
 		}
-		// For now, just broadcast the message back to everyone
-		c.Hub.Broadcast <- message
+
+		// Handle different message types
+		switch msg.Type {
+		case "guess":
+			// We need to handle the payload as a map string interface because ReadJSON unmarshals interface{}
+			// Or we can re-marshal and unmarshal, or use mapstructure.
+			// For simplicity/performance in this MVP, let's manually cast or let the Hub handle it.
+			// Actually, let's pass the raw message to the Hub to route/process to avoid complex logic here.
+			// But wait, the Hub right now just broadcasts bytes.
+			// We need to upgrade the Hub or handle it here.
+
+			// Let's forward the parsed message to the Hub via a new channel or wrapper?
+			// The current Hub.Broadcast takes []byte.
+			// Let's re-serialize appropriately or change Hub.Broadcast.
+			// For now, to keep `client.go` simple, let's process the logic here or call a handler.
+
+			// Re-serializing for broadcast is temporary behavior.
+			// We really want to invoke Game Logic.
+			c.Hub.HandleMessage(c, msg)
+
+		default:
+			log.Printf("Unknown message type: %s", msg.Type)
+		}
 	}
 }
 
