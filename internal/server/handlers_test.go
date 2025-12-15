@@ -43,6 +43,9 @@ func (m *MockStore) SavePlayer(ctx context.Context, player *store.Player) error 
 	return nil
 }
 func (m *MockStore) GetPlayer(ctx context.Context, playerID string) (*store.Player, error) {
+	if p, ok := m.players[playerID]; ok {
+		return p, nil
+	}
 	return nil, nil
 }
 func (m *MockStore) AddPlayerToRoom(ctx context.Context, roomID, playerID string) error {
@@ -93,5 +96,52 @@ func TestHandleCreateGame(t *testing.T) {
 
 	if w.Code != http.StatusOK {
 		t.Errorf("Expected status 200, got %d", w.Code)
+	}
+}
+
+func TestHandleSelectPin(t *testing.T) {
+	mockStore := NewMockStore()
+	hub := socket.NewHub(&config.Config{})
+	srv := NewServer(&config.Config{}, hub, mockStore)
+
+	// Setup: Create Room and Player
+	roomID := "room1"
+	playerID := "player1"
+
+	room := &store.Room{
+		ID: roomID,
+		Config: &store.GameConfig{
+			PinLength: 5,
+		},
+	}
+	player := &store.Player{
+		ID:     playerID,
+		RoomID: roomID,
+	}
+
+	mockStore.SaveRoom(context.Background(), room)
+	mockStore.SavePlayer(context.Background(), player)
+
+	// Test Case: Valid Pin Selection
+	reqBody, _ := json.Marshal(SelectPinRequest{
+		Pins: []string{"12345", "67890", "54321"},
+	})
+
+	req := httptest.NewRequest("POST", "/games/"+roomID+"/players/"+playerID+"/pin", bytes.NewBuffer(reqBody))
+	req.SetPathValue("gameID", roomID)
+	req.SetPathValue("playerID", playerID)
+
+	w := httptest.NewRecorder()
+
+	srv.Handler.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("Expected status 200, got %d. Body: %s", w.Code, w.Body.String())
+	}
+
+	// Verify pins in store
+	updatedPlayer, _ := mockStore.GetPlayer(context.Background(), playerID)
+	if len(updatedPlayer.Pins) != 3 {
+		t.Errorf("Expected 3 pins, got %d", len(updatedPlayer.Pins))
 	}
 }

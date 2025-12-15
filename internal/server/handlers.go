@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -216,5 +217,95 @@ func (s *Server) HandleJoinGame(w http.ResponseWriter, r *http.Request) {
 		PlayerID: playerID,
 		Status:   "joined",
 		Config:   room.Config,
+	})
+}
+
+type SelectPinRequest struct {
+	Pins []string `json:"pins"`
+}
+
+type SelectPinResponse struct {
+	Status string `json:"status"`
+}
+
+// @Summary Select pins for the game
+// @Description Select pins for all rounds of the game
+// @Tags games
+// @Accept json
+// @Produce json
+// @Param gameID path string true "Game ID (Room ID)"
+// @Param playerID path string true "Player ID"
+// @Param request body SelectPinRequest true "Selected pins"
+// @Success 200 {object} SelectPinResponse
+// @Router /games/{gameID}/players/{playerID}/pin [post]
+func (s *Server) HandleSelectPin(w http.ResponseWriter, r *http.Request) {
+	roomID := r.PathValue("gameID")
+	playerID := r.PathValue("playerID")
+
+	var req SelectPinRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	// Validate number of pins (should be 3 for 3 rounds)
+	if len(req.Pins) != 3 {
+		http.Error(w, "Exactly 3 pins are required", http.StatusBadRequest)
+		return
+	}
+
+	// Fetch room to check config
+	room, err := s.store.GetRoom(r.Context(), roomID)
+	if err != nil {
+		http.Error(w, "Room not found", http.StatusNotFound)
+		return
+	}
+
+	// Validate pin length
+	for _, pin := range req.Pins {
+		if len(pin) != room.Config.PinLength {
+			http.Error(w, fmt.Sprintf("All pins must be of length %d", room.Config.PinLength), http.StatusBadRequest)
+			return
+		}
+		// Validate numeric
+		for _, char := range pin {
+			if char < '0' || char > '9' {
+				http.Error(w, "Pins must contain only digits", http.StatusBadRequest)
+				return
+			}
+		}
+	}
+
+	// Fetch Player
+	player, err := s.store.GetPlayer(r.Context(), playerID)
+	if err != nil {
+		http.Error(w, "Player not found", http.StatusNotFound)
+		return
+	}
+
+	// Verify player belongs to room
+	if player.RoomID != roomID {
+		http.Error(w, "Player does not belong to this room", http.StatusForbidden)
+		return
+	}
+
+	// Generate hints if hints are enabled? No, hints are generated during gameplay.
+	// But we might want to validate something else? No.
+
+	// Save pins
+	player.Pins = req.Pins
+	if err := s.store.SavePlayer(r.Context(), player); err != nil {
+		http.Error(w, "Failed to save pins", http.StatusInternalServerError)
+		return
+	}
+
+	// Check if all players have selected pins?
+	// This would require checking the other player.
+	// For now, just return success.
+	// The frontend can poll room status or we can push via websocket (later).
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(SelectPinResponse{
+		Status: "pins_selected",
 	})
 }

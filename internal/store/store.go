@@ -16,9 +16,10 @@ type GameConfig struct {
 
 // Player represents a participant in the game
 type Player struct {
-	ID     string `json:"id"`
-	Name   string `json:"name"`
-	RoomID string `json:"room_id"`
+	ID     string   `json:"id"`
+	Name   string   `json:"name"`
+	RoomID string   `json:"room_id"`
+	Pins   []string `json:"pins"`
 }
 
 // Room represents a game room
