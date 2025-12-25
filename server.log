@@ -1,0 +1,16 @@
+2025/12/16 08:44:34 Server starting on port 8103
+2025/12/16 08:55:57 Checking if all players ready. Player count: 2
+2025/12/16 08:55:57 All players found: [dc15ad94-3dce-4717-874e-db96f2e952ce 93b28a29-e4a1-44bb-a3c6-2b6064cc1e31], All Ready: false
+2025/12/16 08:55:59 Checking if all players ready. Player count: 2
+2025/12/16 08:55:59 All players found: [dc15ad94-3dce-4717-874e-db96f2e952ce 93b28a29-e4a1-44bb-a3c6-2b6064cc1e31], All Ready: true
+2025/12/16 08:55:59 All players ready. Starting game...
+2025/12/16 08:55:59 Broadcasting game_start message to room 38824b53-acec-4363-b6e6-acf4513ce14f
+2025/12/16 08:55:59 Hub received broadcast message. Active clients: 2
+2025/12/16 08:59:59 Checking if all players ready. Player count: 1
+2025/12/16 09:00:12 Checking if all players ready. Player count: 2
+2025/12/16 09:00:12 All players found: [c071a482-73b9-4390-bfeb-6aaa4512df84 2faaf4af-b36b-4045-9e9d-e21a816907c7], All Ready: false
+2025/12/16 09:00:19 Checking if all players ready. Player count: 2
+2025/12/16 09:00:19 All players found: [c071a482-73b9-4390-bfeb-6aaa4512df84 2faaf4af-b36b-4045-9e9d-e21a816907c7], All Ready: true
+2025/12/16 09:00:19 All players ready. Starting game...
+2025/12/16 09:00:19 Broadcasting game_start message to room 4837a051-0f6e-418d-ba5b-cd6c5502ba85
+2025/12/16 09:00:19 Hub received broadcast message. Active clients: 4

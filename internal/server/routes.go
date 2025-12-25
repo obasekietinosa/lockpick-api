@@ -16,6 +16,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	mux.HandleFunc("POST /games", s.HandleCreateGame)
 	mux.HandleFunc("POST /games/join", s.HandleJoinGame)
 	mux.HandleFunc("POST /games/{gameID}/players/{playerID}/pin", s.HandleSelectPin)
+	mux.HandleFunc("GET /games/{gameID}", s.HandleGetGame)
 
 	// Swagger Handler
 	mux.HandleFunc("/swagger/", httpSwagger.WrapHandler)

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Lockpick Test Client</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        .box { border: 1px solid #ccc; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .log { background: #f0f0f0; border: 1px solid #999; padding: 10px; height: 300px; overflow-y: scroll; font-family: monospace; white-space: pre-wrap; }
+        h3 { margin-top: 0; }
+        button { cursor: pointer; padding: 5px 10px; }
+    </style>
+</head>
+<body>
+    <h1>Lockpick API Test Client</h1>
+
+    <div class="box">
+        <h3>1. Create Game (Player A)</h3>
+        <button onclick="createGame()">Create Game</button>
+        <div id="create-result"></div>
+    </div>
+
+    <div class="box">
+        <h3>2. Join Game (Player B)</h3>
+        <input type="text" id="join-room-id" placeholder="Room ID">
+        <button onclick="joinGame()">Join Game</button>
+        <div id="join-result"></div>
+    </div>
+
+    <div class="box">
+        <h3>3. Submit Pins</h3>
+        <div>
+            User A: <input type="text" id="pin-a" value="123">
+            <button onclick="submitPin('A')">Submit A</button>
+        </div>
+        <div style="margin-top:5px;">
+            User B: <input type="text" id="pin-b" value="456">
+            <button onclick="submitPin('B')">Submit B</button>
+        </div>
+    </div>
+
+    <div class="box">
+        <h3>Logs</h3>
+        <div class="log" id="log"></div>
+        <button onclick="document.getElementById('log').innerHTML = ''">Clear Logs</button>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8103';
+        const WS_URL = 'ws://localhost:8103/ws';
+
+        let gameData = {
+            A: { id: null, room: null, socket: null },
+            B: { id: null, room: null, socket: null }
+        };
+
+        function log(msg) {
+            const div = document.getElementById('log');
+            div.innerHTML += `<div>${new Date().toISOString().split('T')[1].split('.')[0]} - ${msg}</div>`;
+            div.scrollTop = div.scrollHeight;
+        }
+
+        async function createGame() {
+            try {
+                const res = await fetch(`${API_URL}/games`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        player_name: 'PlayerA',
+                        config: {
+                            pin_length: 3,
+                            hints_enabled: true,
+                            timer_duration: 60,
+                            is_private: true
+                        }
+                    })
+                });
+                const data = await res.json();
+                if (data.room_id) {
+                    gameData.A.id = data.player_id;
+                    gameData.A.room = data.room_id;
+                    document.getElementById('create-result').innerText = `Created Room: ${data.room_id}, Player ID: ${data.player_id}`;
+                    document.getElementById('join-room-id').value = data.room_id;
+                    log(`[A] Created game: ${data.room_id}`);
+                    connectWS('A');
+                } else {
+                    log(`[Error] Create failed: ${JSON.stringify(data)}`);
+                }
+            } catch (e) {
+                log(`[Error] Create request failed: ${e}`);
+            }
+        }
+
+        async function joinGame() {
+            const roomID = document.getElementById('join-room-id').value;
+            if (!roomID) return alert('Enter Room ID');
+
+            try {
+                const res = await fetch(`${API_URL}/games/join`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        player_name: 'PlayerB',
+                        room_id: roomID
+                    })
+                });
+                const data = await res.json();
+                if (data.room_id) {
+                    gameData.B.id = data.player_id;
+                    gameData.B.room = data.room_id;
+                    document.getElementById('join-result').innerText = `Joined Room: ${data.room_id}, Player ID: ${data.player_id}`;
+                    log(`[B] Joined game: ${data.room_id}`);
+                    connectWS('B');
+                } else {
+                    log(`[Error] Join failed: ${JSON.stringify(data)}`);
+                }
+            } catch (e) {
+                log(`[Error] Join request failed: ${e}`);
+            }
+        }
+
+        function connectWS(player) {
+            const ws = new WebSocket(WS_URL);
+            gameData[player].socket = ws;
+
+            ws.onopen = () => {
+                log(`[${player}] WS Connected`);
+            };
+
+            ws.onmessage = (event) => {
+                log(`[${player}] WS Recv: ${event.data}`);
+            };
+
+            ws.onerror = (e) => {
+                log(`[${player}] WS Error: ${e}`);
+            };
+
+            ws.onclose = () => {
+                log(`[${player}] WS Closed`);
+            };
+        }
+
+        async function submitPin(player) {
+            const pin = document.getElementById(`pin-${player.toLowerCase()}`).value;
+            const roomID = gameData[player].room;
+            const playerID = gameData[player].id;
+
+            if (!roomID || !playerID) return alert(`${player} not in game`);
+
+            try {
+                const res = await fetch(`${API_URL}/games/${roomID}/players/${playerID}/pin`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pins: [pin, pin, pin] }) // 3 pins as required
+                });
+                if (res.ok) {
+                    log(`[${player}] Pins submitted`);
+                } else {
+                    const txt = await res.text();
+                    log(`[${player}] Submit failed: ${txt}`);
+                }
+            } catch (e) {
+                log(`[${player}] Submit request failed: ${e}`);
+            }
+        }
+    </script>
+</body>
+</html>

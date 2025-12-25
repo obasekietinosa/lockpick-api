@@ -51,6 +51,7 @@ func (h *Hub) Run() {
 				close(client.Send)
 			}
 		case message := <-h.Broadcast:
+			log.Printf("Hub received broadcast message. Active clients: %d", len(h.Clients))
 			for client := range h.Clients {
 				select {
 				case client.Send <- message:

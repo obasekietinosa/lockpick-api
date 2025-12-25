@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -307,6 +308,7 @@ func (s *Server) HandleSelectPin(w http.ResponseWriter, r *http.Request) {
 		// Stick to success for now, but logged.
 		fmt.Printf("Error getting room players: %v\n", err)
 	} else {
+		log.Printf("Checking if all players ready. Player count: %d", len(roomPlayers))
 		if len(roomPlayers) == 2 {
 			allReady := true
 			for _, pid := range roomPlayers {
@@ -317,7 +319,10 @@ func (s *Server) HandleSelectPin(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 
+			log.Printf("All players found: %v, All Ready: %v", roomPlayers, allReady)
+
 			if allReady {
+				log.Println("All players ready. Starting game...")
 				// Update room status
 				room.Status = "playing"
 				if err := s.store.SaveRoom(r.Context(), room); err != nil {
@@ -333,6 +338,7 @@ func (s *Server) HandleSelectPin(w http.ResponseWriter, r *http.Request) {
 					},
 				}
 				msgBytes, _ := json.Marshal(msg)
+				log.Printf("Broadcasting game_start message to room %s", room.ID)
 				s.hub.Broadcast <- msgBytes
 			}
 		}
@@ -342,4 +348,25 @@ func (s *Server) HandleSelectPin(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(SelectPinResponse{
 		Status: "pins_selected",
 	})
+}
+
+// @Summary Get game state
+// @Description Get current game state
+// @Tags games
+// @Accept json
+// @Produce json
+// @Param gameID path string true "Game ID (Room ID)"
+// @Success 200 {object} store.Room
+// @Router /games/{gameID} [get]
+func (s *Server) HandleGetGame(w http.ResponseWriter, r *http.Request) {
+	roomID := r.PathValue("gameID")
+
+	room, err := s.store.GetRoom(r.Context(), roomID)
+	if err != nil {
+		http.Error(w, "Room not found", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(room)
 }
