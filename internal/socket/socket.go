@@ -149,6 +149,7 @@ func (h *Hub) handleGuess(client *Client, payload GuessPayload) {
 	response := GameMessage{
 		Type: "guess_result",
 		Payload: map[string]interface{}{
+			"room_id":   payload.RoomID,
 			"player_id": playerID,
 			"guess":     payload.Guess,
 			"hints":     hints,
@@ -178,6 +179,7 @@ func (h *Hub) handleRoundEnd(room *store.Room, winnerID string) {
 	msg := GameMessage{
 		Type: "round_end",
 		Payload: map[string]interface{}{
+			"room_id":   room.ID,
 			"winner_id": winnerID,
 			"round":     room.CurrentRound,
 			"scores":    room.Scores,
@@ -205,7 +207,8 @@ func (h *Hub) handleRoundEnd(room *store.Room, winnerID string) {
 	startMsg := GameMessage{
 		Type: "round_start",
 		Payload: map[string]interface{}{
-			"round": room.CurrentRound,
+			"room_id": room.ID,
+			"round":   room.CurrentRound,
 		},
 	}
 	startBytes, _ := json.Marshal(startMsg)
@@ -239,6 +242,7 @@ func (h *Hub) handleGameEnd(room *store.Room) {
 	msg := GameMessage{
 		Type: "game_end",
 		Payload: map[string]interface{}{
+			"room_id":   room.ID,
 			"winner_id": winnerID,
 			"scores":    room.Scores,
 			"is_draw":   isDraw,
