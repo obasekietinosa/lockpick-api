@@ -3,10 +3,13 @@ package server
 import (
 	"log"
 	"net/http"
+	"regexp"
 	"strings"
 )
 
 func CORSMiddleware(next http.Handler) http.Handler {
+	netlifyDeployPreviewRegex := regexp.MustCompile(`^https://deploy-preview-\d+--play-lockpick\.netlify\.app/?$`)
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")
 
@@ -16,6 +19,8 @@ func CORSMiddleware(next http.Handler) http.Handler {
 			if strings.Contains(origin, "localhost") || strings.Contains(origin, "127.0.0.1") {
 				allowed = true
 			} else if origin == "https://lockpick.co" || strings.HasSuffix(origin, ".lockpick.co") {
+				allowed = true
+			} else if netlifyDeployPreviewRegex.MatchString(origin) {
 				allowed = true
 			}
 		}
