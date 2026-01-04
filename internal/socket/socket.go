@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"sync"
+	"time"
 
 	"github.com/obasekietinosa/lockpick-api/internal/config"
 	"github.com/obasekietinosa/lockpick-api/internal/store"
@@ -18,6 +20,10 @@ type Hub struct {
 
 	// Registered clients.
 	Clients map[*Client]bool
+
+	// Room timers
+	timers map[string]context.CancelFunc
+	mu     sync.Mutex
 
 	// Inbound messages from the clients.
 	Broadcast chan []byte
@@ -35,6 +41,7 @@ func NewHub(cfg *config.Config, store store.Store) *Hub {
 		Register:   make(chan *Client),
 		Unregister: make(chan *Client),
 		Clients:    make(map[*Client]bool),
+		timers:     make(map[string]context.CancelFunc),
 		store:      store,
 		gameLogic:  NewGameLogic(),
 	}
@@ -80,7 +87,144 @@ func (h *Hub) HandleMessage(client *Client, msg GameMessage) {
 			return
 		}
 		h.handleGuess(client, payload)
+	case "player_ready":
+		payloadBytes, err := json.Marshal(msg.Payload)
+		if err != nil {
+			log.Printf("Error marshaling payload: %v", err)
+			return
+		}
+		var payload PlayerReadyPayload
+		if err := json.Unmarshal(payloadBytes, &payload); err != nil {
+			log.Printf("Error unmarshaling payload: %v", err)
+			return
+		}
+		h.handlePlayerReady(client, payload)
 	}
+}
+
+func (h *Hub) handlePlayerReady(client *Client, payload PlayerReadyPayload) {
+	// Lock critical section to prevent race conditions on Room updates
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	// Check if round is already active (timer running)
+	if _, active := h.timers[payload.RoomID]; active {
+		log.Printf("Player %s tried to ready up, but round is already active", payload.PlayerID)
+		return
+	}
+
+	ctx := context.Background()
+
+	room, err := h.store.GetRoom(ctx, payload.RoomID)
+	if err != nil {
+		log.Printf("Error getting room: %v", err)
+		return
+	}
+
+	// Add player to ReadyPlayers if not already present
+	alreadyReady := false
+	for _, pid := range room.ReadyPlayers {
+		if pid == payload.PlayerID {
+			alreadyReady = true
+			break
+		}
+	}
+
+	if !alreadyReady {
+		room.ReadyPlayers = append(room.ReadyPlayers, payload.PlayerID)
+		if err := h.store.SaveRoom(ctx, room); err != nil {
+			log.Printf("Error saving room: %v", err)
+			return
+		}
+	}
+
+	// Check if both players are ready
+	players, err := h.store.GetRoomPlayers(ctx, room.ID)
+	if err != nil {
+		log.Printf("Error getting players: %v", err)
+		return
+	}
+
+	if len(room.ReadyPlayers) >= len(players) {
+		// All players ready, start the round
+
+		// Start Round
+		startMsg := GameMessage{
+			Type: "round_start",
+			Payload: map[string]interface{}{
+				"room_id": room.ID,
+				"round":   room.CurrentRound,
+			},
+		}
+		startBytes, _ := json.Marshal(startMsg)
+		h.Broadcast <- startBytes
+
+		// Reset ReadyPlayers
+		room.ReadyPlayers = []string{}
+		if err := h.store.SaveRoom(ctx, room); err != nil {
+			log.Printf("Error saving room: %v", err)
+		}
+
+		h.startRoundTimerLocked(room.ID)
+	}
+}
+
+func (h *Hub) startRoundTimer(roomID string) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.startRoundTimerLocked(roomID)
+}
+
+func (h *Hub) startRoundTimerLocked(roomID string) {
+	ctx := context.Background()
+	room, err := h.store.GetRoom(ctx, roomID)
+	if err != nil {
+		log.Printf("Error getting room for timer: %v", err)
+		return
+	}
+
+	if room.Config.TimerDuration <= 0 {
+		return
+	}
+
+	// Cancel existing timer if any
+	if cancel, ok := h.timers[roomID]; ok {
+		cancel()
+	}
+
+	// Create new timer context
+	timerCtx, cancel := context.WithCancel(context.Background())
+	h.timers[roomID] = cancel
+
+	go func() {
+		select {
+		case <-time.After(time.Duration(room.Config.TimerDuration) * time.Second):
+			// Timeout occurred
+			h.handleRoundTimeout(roomID, room.CurrentRound)
+		case <-timerCtx.Done():
+			// Timer cancelled (round ended)
+			return
+		}
+	}()
+}
+
+func (h *Hub) handleRoundTimeout(roomID string, roundNumber int) {
+	ctx := context.Background()
+	room, err := h.store.GetRoom(ctx, roomID)
+	if err != nil {
+		log.Printf("Error getting room for timeout: %v", err)
+		return
+	}
+
+	// Check if round is still the same (race condition check)
+	if room.CurrentRound != roundNumber {
+		return
+	}
+
+	log.Printf("Round %d timed out for room %s", roundNumber, roomID)
+
+	// Trigger Draw
+	h.handleRoundEnd(room, "")
 }
 
 func (h *Hub) handleGuess(client *Client, payload GuessPayload) {
@@ -173,6 +317,14 @@ func (h *Hub) handleGuess(client *Client, payload GuessPayload) {
 }
 
 func (h *Hub) handleRoundEnd(room *store.Room, winnerID string) {
+	// Cancel timer for this room
+	h.mu.Lock()
+	if cancel, ok := h.timers[room.ID]; ok {
+		cancel()
+		delete(h.timers, room.ID)
+	}
+	h.mu.Unlock()
+
 	ctx := context.Background()
 
 	// Prepare Round End Message
@@ -203,16 +355,8 @@ func (h *Hub) handleRoundEnd(room *store.Room, winnerID string) {
 		log.Printf("Error saving room state: %v", err)
 	}
 
-	// Notify Start of New Round
-	startMsg := GameMessage{
-		Type: "round_start",
-		Payload: map[string]interface{}{
-			"room_id": room.ID,
-			"round":   room.CurrentRound,
-		},
-	}
-	startBytes, _ := json.Marshal(startMsg)
-	h.Broadcast <- startBytes
+	// Wait for players to be ready before starting the next round
+	// We do NOT send round_start here anymore.
 }
 
 func (h *Hub) handleGameEnd(room *store.Room) {
