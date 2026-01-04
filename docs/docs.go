@@ -9,15 +9,7 @@ const docTemplate = `{
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
-        "termsOfService": "http://swagger.io/terms/",
-        "contact": {
-            "name": "API Support",
-            "email": "support@swagger.io"
-        },
-        "license": {
-            "name": "Apache 2.0",
-            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
-        },
+        "contact": {},
         "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
@@ -86,6 +78,86 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/server.JoinGameResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/games/{gameID}": {
+            "get": {
+                "description": "Get current game state",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "games"
+                ],
+                "summary": "Get game state",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Game ID (Room ID)",
+                        "name": "gameID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/store.Room"
+                        }
+                    }
+                }
+            }
+        },
+        "/games/{gameID}/players/{playerID}/pin": {
+            "post": {
+                "description": "Select pins for all rounds of the game",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "games"
+                ],
+                "summary": "Select pins for the game",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Game ID (Room ID)",
+                        "name": "gameID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Player ID",
+                        "name": "playerID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Selected pins",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/server.SelectPinRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/server.SelectPinResponse"
                         }
                     }
                 }
@@ -172,6 +244,25 @@ const docTemplate = `{
                 }
             }
         },
+        "server.SelectPinRequest": {
+            "type": "object",
+            "properties": {
+                "pins": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "server.SelectPinResponse": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
         "store.GameConfig": {
             "type": "object",
             "properties": {
@@ -192,6 +283,44 @@ const docTemplate = `{
                     "type": "integer"
                 }
             }
+        },
+        "store.Room": {
+            "type": "object",
+            "properties": {
+                "config": {
+                    "$ref": "#/definitions/store.GameConfig"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "current_round": {
+                    "description": "1-indexed (1, 2, 3)",
+                    "type": "integer"
+                },
+                "host_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "ready_players": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "scores": {
+                    "description": "PlayerID -\u003e Score (Rounds won)",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
+                    }
+                },
+                "status": {
+                    "description": "e.g., \"waiting\", \"playing\", \"finished\"",
+                    "type": "string"
+                }
+            }
         }
     }
 }`
@@ -199,7 +328,7 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "localhost:8080",
+	Host:             "localhost:8103",
 	BasePath:         "/",
 	Schemes:          []string{},
 	Title:            "Lockpick API",

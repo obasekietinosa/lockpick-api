@@ -36,6 +36,18 @@ definitions:
       status:
         type: string
     type: object
+  server.SelectPinRequest:
+    properties:
+      pins:
+        items:
+          type: string
+        type: array
+    type: object
+  server.SelectPinResponse:
+    properties:
+      status:
+        type: string
+    type: object
   store.GameConfig:
     properties:
       hints_enabled:
@@ -50,16 +62,36 @@ definitions:
         description: 0 means no timer
         type: integer
     type: object
-host: localhost:8080
+  store.Room:
+    properties:
+      config:
+        $ref: '#/definitions/store.GameConfig'
+      created_at:
+        type: string
+      current_round:
+        description: 1-indexed (1, 2, 3)
+        type: integer
+      host_id:
+        type: string
+      id:
+        type: string
+      ready_players:
+        items:
+          type: string
+        type: array
+      scores:
+        additionalProperties:
+          type: integer
+        description: PlayerID -> Score (Rounds won)
+        type: object
+      status:
+        description: e.g., "waiting", "playing", "finished"
+        type: string
+    type: object
+host: localhost:8103
 info:
-  contact:
-    email: support@swagger.io
-    name: API Support
+  contact: {}
   description: API for Lockpick game.
-  license:
-    name: Apache 2.0
-    url: http://www.apache.org/licenses/LICENSE-2.0.html
-  termsOfService: http://swagger.io/terms/
   title: Lockpick API
   version: "1.0"
 paths:
@@ -83,6 +115,59 @@ paths:
           schema:
             $ref: '#/definitions/server.CreateGameResponse'
       summary: Create a new game
+      tags:
+      - games
+  /games/{gameID}:
+    get:
+      consumes:
+      - application/json
+      description: Get current game state
+      parameters:
+      - description: Game ID (Room ID)
+        in: path
+        name: gameID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/store.Room'
+      summary: Get game state
+      tags:
+      - games
+  /games/{gameID}/players/{playerID}/pin:
+    post:
+      consumes:
+      - application/json
+      description: Select pins for all rounds of the game
+      parameters:
+      - description: Game ID (Room ID)
+        in: path
+        name: gameID
+        required: true
+        type: string
+      - description: Player ID
+        in: path
+        name: playerID
+        required: true
+        type: string
+      - description: Selected pins
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/server.SelectPinRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/server.SelectPinResponse'
+      summary: Select pins for the game
       tags:
       - games
   /games/join:
