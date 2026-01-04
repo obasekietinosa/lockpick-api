@@ -340,6 +340,9 @@ func (s *Server) HandleSelectPin(w http.ResponseWriter, r *http.Request) {
 				msgBytes, _ := json.Marshal(msg)
 				log.Printf("Broadcasting game_start message to room %s", room.ID)
 				s.hub.Broadcast <- msgBytes
+
+				// Start the timer for Round 1
+				s.hub.StartRoundTimer(room.ID)
 			}
 		}
 	}

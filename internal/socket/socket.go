@@ -169,7 +169,7 @@ func (h *Hub) handlePlayerReady(client *Client, payload PlayerReadyPayload) {
 	}
 }
 
-func (h *Hub) startRoundTimer(roomID string) {
+func (h *Hub) StartRoundTimer(roomID string) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.startRoundTimerLocked(roomID)
