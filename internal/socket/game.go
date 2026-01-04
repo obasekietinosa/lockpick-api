@@ -17,6 +17,12 @@ type GuessPayload struct {
 	Guess    string `json:"guess"`
 }
 
+// PlayerReadyPayload represents the payload for a player ready message
+type PlayerReadyPayload struct {
+	RoomID   string `json:"room_id"`
+	PlayerID string `json:"player_id"`
+}
+
 // GameLogic handles the core rules of the game
 type GameLogic struct{}
 
