@@ -12,51 +12,62 @@ func TestGenerateHints(t *testing.T) {
 		name       string
 		guess      string
 		correctPin string
-		expected   []int
+		want       []int
 	}{
 		{
 			name:       "All Correct",
-			guess:      "12345",
-			correctPin: "12345",
-			expected:   []int{2, 2, 2, 2, 2},
+			guess:      "123",
+			correctPin: "123",
+			want:       []int{2, 2, 2},
 		},
 		{
 			name:       "All Wrong",
-			guess:      "67890",
-			correctPin: "12345",
-			expected:   []int{0, 0, 0, 0, 0},
+			guess:      "456",
+			correctPin: "123",
+			want:       []int{0, 0, 0},
 		},
 		{
-			name:       "Wrong Positions",
-			guess:      "54321",
-			correctPin: "12345",
-			expected:   []int{1, 1, 2, 1, 1}, // 3 matches 3 (Green 2), others Orange 1
+			name:       "One Green, One Orange",
+			guess:      "135",
+			correctPin: "123",
+			want:       []int{2, 1, 0},
 		},
 		{
-			name:       "Partial Match",
-			guess:      "12000",
-			correctPin: "12345",
-			expected:   []int{2, 2, 0, 0, 0},
+			name:       "Duplicate Guess Digits - Single Match",
+			guess:      "112",
+			correctPin: "123",
+			want:       []int{2, 0, 1},
 		},
 		{
-			name:       "Double Digits in Guess",
-			guess:      "11000",
-			correctPin: "12345",
-			expected:   []int{2, 0, 0, 0, 0}, // First 1 matches, second 1 is extra (Grey) because Pin has only one 1
+			name:       "Duplicate Guess Digits - Two Matches in Target",
+			guess:      "112",
+			correctPin: "121",
+			want:       []int{2, 1, 1}, // 1(green), 1(orange), 2(orange)
 		},
 		{
-			name:       "Double Digits in Pin",
-			guess:      "10000",
-			correctPin: "11234",
-			expected:   []int{2, 0, 0, 0, 0}, // Guess 1 matches first 1.
+			name:       "Duplicate Target Digits - Single Match in Guess",
+			guess:      "123",
+			correctPin: "111",
+			want:       []int{2, 0, 0},
+		},
+		{
+			name:       "Orange Only",
+			guess:      "312",
+			correctPin: "123",
+			want:       []int{1, 1, 1},
+		},
+		{
+			name:       "Complex Case 1",
+			guess:      "1122",
+			correctPin: "1212",
+			want:       []int{2, 1, 1, 2},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := logic.GenerateHints(tt.guess, tt.correctPin)
-			if !reflect.DeepEqual(got, tt.expected) {
-				t.Errorf("GenerateHints() = %v, want %v", got, tt.expected)
+			if got := logic.GenerateHints(tt.guess, tt.correctPin); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GameLogic.GenerateHints() = %v, want %v", got, tt.want)
 			}
 		})
 	}

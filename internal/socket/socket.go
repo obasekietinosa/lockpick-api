@@ -273,6 +273,10 @@ func (h *Hub) handleGuess(client *Client, payload GuessPayload) {
 		// Auto-correct if 0
 		if room.CurrentRound == 0 {
 			room.CurrentRound = 1
+			// Save the correction to prevent future issues
+			if err := h.store.SaveRoom(ctx, room); err != nil {
+				log.Printf("Error saving room correction: %v", err)
+			}
 		} else {
 			log.Printf("Invalid round number: %d", room.CurrentRound)
 			return

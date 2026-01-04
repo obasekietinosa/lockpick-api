@@ -119,11 +119,12 @@ func (s *Server) HandleCreateGame(w http.ResponseWriter, r *http.Request) {
 	}
 
 	room := &store.Room{
-		ID:        roomID,
-		HostID:    playerID,
-		Status:    "waiting",
-		Config:    req.Config,
-		CreatedAt: time.Now(),
+		ID:           roomID,
+		HostID:       playerID,
+		Status:       "waiting",
+		Config:       req.Config,
+		CurrentRound: 1,
+		CreatedAt:    time.Now(),
 	}
 
 	if err := s.store.SaveRoom(r.Context(), room); err != nil {
