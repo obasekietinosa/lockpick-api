@@ -17,10 +17,12 @@ jobs:
         run: go install github.com/swaggo/swag/cmd/swag@latest
 
       - name: Generate Swagger Docs
-        run: swag init -g cmd/api/main.go
+        run: |
+          cd server
+          swag init -g cmd/api/main.go
 
       - name: Build api.lockbox.co
-        run: cd cmd/api && go build -o build/api
+        run: cd server/cmd/api && go build -o build/api
 
       - name: Deploy via SSH
         uses: SamKirkland/web-deploy@v1
@@ -28,6 +30,6 @@ jobs:
           target-server: ${{ secrets.SSH_HOST }}
           remote-user: ${{ secrets.SSH_USER }}
           private-ssh-key: ${{ secrets.SSH_KEY }}
-          source-path: ./cmd/api/build/
+          source-path: ./server/cmd/api/build/
           destination-path: ./
           rsync-options: --chmod=+X -a --no-times
