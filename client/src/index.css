@@ -1,0 +1,37 @@
+@import url('https://fonts.googleapis.com/css2?family=Dongle:wght@300;400;700&family=Nunito:wght@400;600;700;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-display: 'Dongle', sans-serif;
+  --font-body: 'Nunito', sans-serif;
+
+  --color-primary: #8B5CF6;
+  /* Violet 500 */
+  --color-primary-hover: #7C3AED;
+  /* Violet 600 */
+  --color-secondary: #EC4899;
+  /* Pink 500 */
+  --color-accent: #F59E0B;
+  /* Amber 500 */
+  --color-background: #F3F4F6;
+  /* Gray 100 */
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-background);
+  color: #1F2937;
+  /* Gray 800 */
+  overflow-x: hidden;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-display);
+  line-height: 1;
+  /* Dongle has large line height naturally, tightening it */
+}
