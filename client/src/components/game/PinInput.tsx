@@ -4,7 +4,7 @@ interface PinInputProps {
     length: number;
     value: string[];
     onChange: (newValue: string[]) => void;
-    onComplete?: () => void;
+    onComplete?: (value: string[]) => void;
     disabled?: boolean;
 }
 
@@ -30,13 +30,18 @@ export const PinInput = ({ length, value, onChange, onComplete, disabled }: PinI
 
         // Check completion
         if (newValue.every(v => v !== "") && index === length - 1 && val !== "") {
-            onComplete?.();
+            onComplete?.(newValue);
         }
     };
 
     const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
         if (e.key === "Backspace" && !value[index] && index > 0) {
             inputRefs.current[index - 1]?.focus();
+        }
+        if (e.key === "Enter") {
+             if (value.every(v => v !== "")) {
+                 onComplete?.(value);
+             }
         }
     };
 
