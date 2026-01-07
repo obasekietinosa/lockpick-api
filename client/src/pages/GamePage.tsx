@@ -157,12 +157,12 @@ export const GamePage = () => {
                             length={config.pinLength}
                             value={currentGuess}
                             onChange={setCurrentGuess}
-                            onComplete={() => { /* Optional: auto-submit? No, let user confirm */ }}
+                            onComplete={(val) => submitGuess(val)}
                             disabled={!isRoundActive}
                         />
 
                         <button
-                            onClick={submitGuess}
+                            onClick={() => submitGuess()}
                             disabled={!isRoundActive || currentGuess.some(d => d === "")}
                             className="mt-6 w-full py-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold rounded-xl shadow-lg shadow-cyan-500/20 disabled:opacity-50 disabled:grayscale transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 text-lg"
                         >

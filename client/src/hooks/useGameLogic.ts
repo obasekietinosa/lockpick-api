@@ -120,9 +120,11 @@ export const useGameLogic = (config: GameConfig) => {
         setIsRoundActive(true);
     }, [config.pinLength, config.timerDuration, config.mode, generatePin]);
 
-    const submitGuess = useCallback(() => {
+    const submitGuess = useCallback((guessOverride?: string[]) => {
+        const guessToSubmit = guessOverride || currentGuess;
+
         if (!isRoundActive) return;
-        if (currentGuess.some(digit => digit === '')) return;
+        if (guessToSubmit.some(digit => digit === '')) return;
 
         if (config.mode === 'multiplayer') {
              if (!config.roomId || !config.playerId) return;
@@ -132,7 +134,7 @@ export const useGameLogic = (config: GameConfig) => {
                  room_id: config.roomId,
                  player_id: config.playerId,
                  payload: {
-                     guess: currentGuess.join(''),
+                     guess: guessToSubmit.join(''),
                      room_id: config.roomId, // Redundant but safe based on server types
                      player_id: config.playerId
                  }
@@ -142,9 +144,9 @@ export const useGameLogic = (config: GameConfig) => {
         }
 
         // Single Player Logic
-        const feedback = calculateFeedback(currentGuess, secretPin);
+        const feedback = calculateFeedback(guessToSubmit, secretPin);
         const newGuess: Guess = {
-            values: [...currentGuess],
+            values: [...guessToSubmit],
             feedback,
             timestamp: Date.now(),
         };
