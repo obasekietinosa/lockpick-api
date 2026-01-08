@@ -26,7 +26,7 @@ export const PinPad = ({ onDigit, onBackspace, disabled }: PinPadProps) => {
                         }}
                         disabled={disabled}
                         className={`
-                            h-14 flex items-center justify-center rounded-xl font-bold text-2xl transition-all active:scale-90 touch-manipulation select-none
+                            h-16 flex items-center justify-center rounded-xl font-bold text-3xl transition-all active:scale-90 touch-manipulation select-none
                             ${isBack
                                 ? "bg-slate-700/50 text-slate-400 hover:bg-slate-700 active:bg-slate-600"
                                 : "bg-slate-700 text-slate-100 hover:bg-slate-600 active:bg-cyan-600 border-b-4 border-slate-900 active:border-b-0 active:translate-y-1 shadow-lg"
@@ -34,7 +34,7 @@ export const PinPad = ({ onDigit, onBackspace, disabled }: PinPadProps) => {
                             disabled:opacity-50 disabled:pointer-events-none
                         `}
                     >
-                        {isBack ? <Icon icon="mdi:backspace-outline" width="28" /> : digit}
+                        {isBack ? <Icon icon="mdi:backspace-outline" width="32" /> : digit}
                     </button>
                 );
             })}
