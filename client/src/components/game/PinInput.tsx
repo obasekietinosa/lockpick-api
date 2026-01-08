@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect } from "react";
 import { PinPad } from "./PinPad";
 
 interface PinInputProps {
@@ -11,33 +11,11 @@ interface PinInputProps {
 
 export const PinInput = ({ length, value, onChange, onComplete, disabled }: PinInputProps) => {
     const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-    const [isMobile, setIsMobile] = useState(false);
-
-    useEffect(() => {
-        const checkMobile = () => {
-            setIsMobile(window.matchMedia("(max-width: 768px)").matches);
-        };
-
-        checkMobile();
-        window.addEventListener('resize', checkMobile);
-        return () => window.removeEventListener('resize', checkMobile);
-    }, []);
 
     useEffect(() => {
         // Reset refs array when length changes
         inputRefs.current = inputRefs.current.slice(0, length);
     }, [length]);
-
-    // Focus management for Desktop
-    useEffect(() => {
-        if (!isMobile && !disabled) {
-            // If value was reset (all empty), focus first input
-            const isEmpty = value.every(v => v === "");
-            if (isEmpty) {
-                inputRefs.current[0]?.focus();
-            }
-        }
-    }, [value, isMobile, disabled]);
 
     const handleChange = (index: number, val: string) => {
         if (!/^\d*$/.test(val)) return;
@@ -101,39 +79,62 @@ export const PinInput = ({ length, value, onChange, onComplete, disabled }: PinI
         }
     };
 
+    const boxClasses = `
+        w-12 h-14 sm:w-16 sm:h-20 text-center text-2xl sm:text-4xl font-bold rounded-lg border-2
+        transition-all caret-cyan-400 disabled:opacity-50 disabled:cursor-not-allowed
+        flex items-center justify-center
+    `;
+
     return (
         <div className="flex flex-col items-center gap-6">
-            <div className="flex justify-center gap-2 sm:gap-4">
+
+            {/* Mobile Display (Divs) */}
+            <div className="flex justify-center gap-2 sm:gap-4 md:hidden">
+                {Array.from({ length }).map((_, idx) => (
+                    <div
+                        key={idx}
+                        className={`
+                            ${boxClasses}
+                            pointer-events-none select-none
+                            ${value[idx] ? "border-cyan-500/50 bg-slate-800 text-white" : "border-slate-600 bg-slate-900 text-slate-400"}
+                        `}
+                    >
+                        {value[idx] || ""}
+                    </div>
+                ))}
+            </div>
+
+            {/* Desktop Input */}
+            <div className="hidden md:flex justify-center gap-2 sm:gap-4">
                 {Array.from({ length }).map((_, idx) => (
                     <input
                         key={idx}
                         ref={el => { inputRefs.current[idx] = el; }}
                         type="text"
-                        inputMode={isMobile ? "none" : "numeric"}
-                        readOnly={isMobile}
+                        inputMode="numeric"
                         maxLength={1}
+                        autoFocus={idx === 0 && !disabled}
                         value={value[idx] || ""}
-                        onChange={(e) => !isMobile && handleChange(idx, e.target.value)}
-                        onKeyDown={(e) => !isMobile && handleKeyDown(idx, e)}
+                        onChange={(e) => handleChange(idx, e.target.value)}
+                        onKeyDown={(e) => handleKeyDown(idx, e)}
                         disabled={disabled}
-                        // Prevent selection on mobile
                         className={`
-                            w-12 h-14 sm:w-16 sm:h-20 text-center text-2xl sm:text-4xl font-bold rounded-lg border-2
-                            transition-all caret-cyan-400 disabled:opacity-50 disabled:cursor-not-allowed
-                            ${isMobile ? "pointer-events-none select-none" : "focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-400/50"}
+                            ${boxClasses}
+                            focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-400/50
                             ${value[idx] ? "border-cyan-500/50 bg-slate-800 text-white" : "border-slate-600 bg-slate-900 text-slate-400"}
                         `}
                     />
                 ))}
             </div>
 
-            {isMobile && (
+            {/* Mobile PinPad */}
+            <div className="md:hidden">
                 <PinPad
                     onDigit={handlePinPadDigit}
                     onBackspace={handlePinPadBackspace}
                     disabled={disabled}
                 />
-            )}
+            </div>
         </div>
     );
 };

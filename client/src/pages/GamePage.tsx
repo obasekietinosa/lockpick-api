@@ -154,6 +154,7 @@ export const GamePage = () => {
                         </div>
 
                         <PinInput
+                            key={`${guesses.length}-${currentRound}-${isRoundActive}`}
                             length={config.pinLength}
                             value={currentGuess}
                             onChange={setCurrentGuess}
