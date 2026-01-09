@@ -10,7 +10,7 @@ export const PinPad = ({ onDigit, onBackspace, disabled }: PinPadProps) => {
     const digits = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "back"];
 
     return (
-        <div className="grid grid-cols-3 gap-3 w-full max-w-[280px] mx-auto mt-6 animate-in slide-in-from-bottom-4 duration-300">
+        <div className="grid grid-cols-3 gap-3 w-full max-w-sm mx-auto mt-6 animate-in slide-in-from-bottom-4 duration-300">
             {digits.map((digit, idx) => {
                 if (digit === "") return <div key={idx} />;
 
