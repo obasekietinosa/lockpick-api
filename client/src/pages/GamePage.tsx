@@ -38,47 +38,6 @@ export const GamePage = () => {
     // Get current round's player pin
     const playerPins = state?.pins || ["", "", ""];
 
-    // We can't access hook state initialized conditionally, but we can access it inside component.
-    // The hook needs the current round pin, but `useGameLogic` manages `currentRound`.
-    // We should pass the FULL array of pins to the hook or fetch it based on round index inside the component.
-    // The hook in `useGameLogic` currently takes `playerPin` as a single string.
-    // Let's modify usage:
-    // The hook updates `currentRound`. We can get the pin for that round.
-    // But hooks can't re-run with DIFFERENT initial props reactively logic-wise if we just pass `playerPins[round]`.
-    // Actually, passing `playerPins[currentRound - 1]` is fine as long as `useGameLogic` reacts to prop changes if needed
-    // OR we pass the whole array.
-    // `useGameLogic` currently takes `playerSecretPinRound`.
-    // We need to make sure `useGameLogic` uses the *current* round's pin for bot logic.
-
-    // Wait, I can't call hooks conditionally or inside loops.
-    // I need access to `currentRound` *from* the hook to know which pin to pass *to* the hook?
-    // That's a circular dependency.
-    // Better: Helper function inside hook that takes the round index or just pass all pins to hook.
-
-    // For now, let's assume `useGameLogic` handles internal round updating, and we need to provide the *current* secret
-    // for the *current* round.
-    // BUT `currentRound` is state *inside* the hook.
-    // So the hook needs to accept `allPlayerPins`.
-
-    // NOTE: I will probably need to Refactor `useGameLogic` slightly to accept `string[]` for pins,
-    // or just assume Single Player doesn't need player pin for anything other than displaying?
-    // Oh wait, the BOT needs to guess the PLAYER'S pin. So yes, the logic needs it.
-
-    // Quick fix: Update `useGameLogic` to take array of pins.
-    // OR: pass a getter function `(round) => pin`.
-
-    // Let's implement GamePage assuming I'll fix the hook signature in a second strictly if needed.
-    // Actually, `useGameLogic` logic for `opponentMakeGuess` depends on `playerSecretPinRound`.
-    // If I pass `playerPins[currentRound - 1]` to the hook, does it work?
-    // `currentRound` is returned by the hook.
-    // So I can't pass `playerPins[hook.currentRound]` to the hook definition.
-
-    // Solution: Pass the whole `playerPins` array to `useGameLogic`.
-
-    // For this step, I'll pass the whole array. I'll need to update `useGameLogic` after this file writing.
-
-    // To avoid errors, I'll create the component passing the array, and then immediately update the hook.
-
     const {
         currentRound,
         playerScore,
@@ -93,7 +52,7 @@ export const GamePage = () => {
         setCurrentGuess,
         submitGuess,
         nextRound
-    } = useGameLogic({ ...config, playerPins }); // Passing playerPins array
+    } = useGameLogic({ ...config, playerPins });
 
     if (!state) return null;
 
