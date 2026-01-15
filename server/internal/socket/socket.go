@@ -187,6 +187,13 @@ func (h *Hub) startRoundTimerLocked(roomID string) {
 		return
 	}
 
+	// Set RoundStartTime
+	now := time.Now()
+	room.RoundStartTime = &now
+	if err := h.store.SaveRoom(ctx, room); err != nil {
+		log.Printf("Error saving room start time: %v", err)
+	}
+
 	// Cancel existing timer if any
 	if cancel, ok := h.timers[roomID]; ok {
 		cancel()
@@ -236,6 +243,22 @@ func (h *Hub) handleGuess(client *Client, payload GuessPayload) {
 	room, err := h.store.GetRoom(ctx, payload.RoomID)
 	if err != nil {
 		log.Printf("Error getting room: %v", err)
+		return
+	}
+
+	// Validate Round
+	if payload.Round != 0 && payload.Round != room.CurrentRound {
+		log.Printf("Ignored guess from %s: round mismatch (client: %d, server: %d)", payload.PlayerID, payload.Round, room.CurrentRound)
+		return
+	}
+
+	// Validate Round Active (Timer check)
+	h.mu.Lock()
+	_, timerActive := h.timers[payload.RoomID]
+	h.mu.Unlock()
+
+	if !timerActive {
+		log.Printf("Ignored guess from %s: round not active (no timer)", payload.PlayerID)
 		return
 	}
 
