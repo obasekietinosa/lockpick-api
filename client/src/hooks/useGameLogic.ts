@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { socketService, type WebSocketMessage } from '../services/socket';
+import { type GameState } from '../services/api';
 
 export type GuessFeedback = 'correct' | 'present' | 'absent';
 
@@ -18,7 +19,7 @@ export interface GameConfig {
     mode: 'single' | 'multiplayer';
     roomId?: string;
     playerId?: string;
-    initialState?: any;
+    initialState?: GameState | null;
 }
 
 export interface RoundResult {

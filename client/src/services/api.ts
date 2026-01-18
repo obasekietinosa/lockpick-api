@@ -18,6 +18,18 @@ export interface JoinGameResponse {
     status: string;
 }
 
+export interface GameState {
+    id: string;
+    host_id: string;
+    status: string;
+    config: GameConfig;
+    current_round: number;
+    round_start_time?: string;
+    scores: Record<string, number>;
+    created_at: string;
+    ready_players: string[];
+}
+
 export interface SubmitPinPayload {
     pins: string[];
 }
@@ -77,7 +89,7 @@ export const api = {
         }
     },
 
-    getGame: async (roomId: string): Promise<JoinGameResponse> => {
+    getGame: async (roomId: string): Promise<GameState> => {
         const response = await fetch(`${API_BASE_URL}/games/${roomId}`, {
             method: 'GET',
             headers: {

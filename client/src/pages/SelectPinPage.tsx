@@ -81,7 +81,7 @@ export const SelectPinPage = () => {
                                 ...state,
                                 pins: pins,
                                 gameStarted: true,
-                                initialPayload: { room_id: game.room_id, status: game.status }
+                                initialPayload: { room_id: game.id, status: game.status }
                             }
                         });
                     }

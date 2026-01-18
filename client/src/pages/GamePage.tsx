@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
-import { api } from "../services/api";
+import { api, type GameState } from "../services/api";
 import { useGameLogic } from "../hooks/useGameLogic";
 import { ScoreBoard } from "../components/game/ScoreBoard";
 import { GameTimer } from "../components/game/GameTimer";
@@ -17,7 +17,7 @@ export const GamePage = () => {
 
     // Safety check for state
     const state = location.state;
-    const [fetchedState, setFetchedState] = useState<any>(null);
+    const [fetchedState, setFetchedState] = useState<GameState | null>(null);
 
     useEffect(() => {
         if (!state) {
