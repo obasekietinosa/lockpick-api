@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { socketService, type WebSocketMessage } from '../services/socket';
+import { type GameState } from '../services/api';
 
 export type GuessFeedback = 'correct' | 'present' | 'absent';
 
@@ -18,6 +19,7 @@ export interface GameConfig {
     mode: 'single' | 'multiplayer';
     roomId?: string;
     playerId?: string;
+    initialState?: GameState | null;
 }
 
 export interface RoundResult {
@@ -136,7 +138,8 @@ export const useGameLogic = (config: GameConfig) => {
                  payload: {
                      guess: guessToSubmit.join(''),
                      room_id: config.roomId, // Redundant but safe based on server types
-                     player_id: config.playerId
+                     player_id: config.playerId,
+                     round: currentRound
                  }
              });
              // We don't update local state yet; wait for server response
@@ -357,11 +360,59 @@ export const useGameLogic = (config: GameConfig) => {
 
     // Initial Start
     useEffect(() => {
-        // In multiplayer, we might need to wait for start, OR we are already started.
-        // If we are here, round 1 is likely active.
-        startRound();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+        if (config.mode === 'multiplayer' && config.initialState) {
+            console.log("Syncing with initial state:", config.initialState);
+            const { current_round, scores, round_start_time } = config.initialState;
+
+            // Sync Round
+            if (current_round) {
+                setCurrentRound(current_round);
+            }
+
+            // Sync Scores
+            if (scores && config.playerId) {
+                setPlayerScore(scores[config.playerId] || 0);
+                const opponentId = Object.keys(scores).find(id => id !== config.playerId);
+                if (opponentId) setOpponentScore(scores[opponentId]);
+            }
+
+            // Sync Time & Active State
+            // Note: startRound resets time, so we must be careful.
+            // If we have state, we shouldn't call startRound() blindly.
+
+            // Initialize basic round state manually to avoid full reset
+            setGuesses([]);
+            setOpponentGuesses([]);
+            setCurrentGuess(Array(config.pinLength).fill(''));
+
+            if (round_start_time) {
+                const startTime = new Date(round_start_time).getTime();
+                const now = Date.now();
+                const elapsed = Math.floor((now - startTime) / 1000);
+                const remaining = config.timerDuration - elapsed;
+
+                console.log("Time sync:", { startTime, now, elapsed, remaining });
+
+                if (remaining > 0) {
+                    setTimeLeft(remaining);
+                    setIsRoundActive(true);
+                } else {
+                    setTimeLeft(0);
+                    // Round likely over, wait for server update or user action
+                    setIsRoundActive(false);
+                }
+            } else {
+                // No start time (maybe round 1 just started without time yet? or simple sync)
+                setTimeLeft(config.timerDuration);
+                setIsRoundActive(true);
+            }
+
+        } else {
+            // Standard start (Single player or Fresh MP)
+            startRound();
+        }
+        // Re-run if initialState changes (e.g. late fetch)
+    }, [config.initialState]);
 
     return {
         // State

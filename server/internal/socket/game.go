@@ -15,6 +15,7 @@ type GuessPayload struct {
 	RoomID   string `json:"room_id"`
 	PlayerID string `json:"player_id"`
 	Guess    string `json:"guess"`
+	Round    int    `json:"round"`
 }
 
 // PlayerReadyPayload represents the payload for a player ready message

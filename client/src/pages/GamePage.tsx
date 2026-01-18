@@ -1,5 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
+import { api, type GameState } from "../services/api";
 import { useGameLogic } from "../hooks/useGameLogic";
 import { ScoreBoard } from "../components/game/ScoreBoard";
 import { GameTimer } from "../components/game/GameTimer";
@@ -16,10 +17,21 @@ export const GamePage = () => {
 
     // Safety check for state
     const state = location.state;
+    const [fetchedState, setFetchedState] = useState<GameState | null>(null);
 
     useEffect(() => {
         if (!state) {
             navigate("/");
+            return;
+        }
+
+        if (state.mode === 'multiplayer' && state.room_id) {
+            api.getGame(state.room_id).then(game => {
+                console.log("Fetched initial game state:", game);
+                setFetchedState(game);
+            }).catch(err => {
+                console.error("Failed to sync game state:", err);
+            });
         }
     }, [state, navigate]);
 
@@ -33,6 +45,7 @@ export const GamePage = () => {
         mode: state?.mode || 'single',
         roomId: state?.room_id,
         playerId: state?.player_id,
+        initialState: fetchedState,
     };
 
     // Get current round's player pin
